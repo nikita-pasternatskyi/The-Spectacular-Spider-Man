@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://objects/player/meshes/highpoly_mesh.tres" type="ArrayMesh" id=1]
 [ext_resource path="res://objects/player/scripts/player_camera.gd" type="Script" id=2]
@@ -16,6 +16,7 @@
 [ext_resource path="res://objects/player/scripts/transitions/AirToGroundTransition.cs" type="Script" id=14]
 [ext_resource path="res://objects/player/scripts/debugger.gd" type="Script" id=15]
 [ext_resource path="res://fonts/AnonymousPro-Regular.ttf" type="DynamicFontData" id=16]
+[ext_resource path="res://addons/LineRenderer/LineRenderer.gd" type="Script" id=17]
 
 [sub_resource type="DynamicFont" id=6]
 size = 48
@@ -726,6 +727,12 @@ debug_shape_thickness = 4.0
 script = ExtResource( 5 )
 _pathToSpringArm = NodePath("../SpringArm")
 
+[node name="WebRenderer" type="ImmediateGeometry" parent="."]
+script = ExtResource( 17 )
+endThickness = 0.5
+drawCaps = false
+drawCorners = false
+
 [node name="StateMachineDebugger" type="Node" parent="."]
 script = ExtResource( 15 )
 
@@ -751,7 +758,7 @@ script = ExtResource( 6 )
 
 [node name="ToIdle" type="Node" parent="StateMachine/SwingState/Transitions"]
 script = ExtResource( 3 )
-_toStatePath = NodePath("../../../IdleState")
+_toStatePath = NodePath("../../../InAirState")
 _buttonConditions = [ 4 ]
 _allTriggered = true
 
@@ -765,9 +772,9 @@ _rotationSpeed = 5.0
 _constrainStickMinLength = true
 _numIterations = 4
 _perfectPoint = Vector3( 0, 15, 15 )
-_damp = 0.65
-_swingSpeed = Vector2( 0.5, 0.25 )
-_gravity = -150.0
+_damp = 0.4
+_swingSpeed = Vector2( 0.5, 0.5 )
+_gravity = 150.0
 
 [node name="IdleState" type="Node" parent="StateMachine"]
 script = ExtResource( 6 )
@@ -1374,3 +1381,4 @@ transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.0
 shape = SubResource( 5 )
 
 [connection signal="StateChanged" from="StateMachine" to="StateMachineDebugger" method="_on_StateMachine_StateChanged"]
+[connection signal="Attached" from="StateMachine/SwingState/Actions/SwingAction" to="WebRenderer" method="_on_SwingAction_Attached"]

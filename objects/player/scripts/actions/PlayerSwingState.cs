@@ -18,6 +18,7 @@ public class Rope
 [System.Serializable]
 public class PlayerSwingState : StateAction
 {
+    [Signal] private delegate Vector3 Attached();
     [Export] private float _rotationSpeed;
     [Export] private bool _constrainStickMinLength;
     [Export] private int _numIterations;
@@ -64,14 +65,9 @@ public class PlayerSwingState : StateAction
                 point.Position += velocity;
 
                 var upVector = (point.Position - _swingPoints[0].Position).Normalized();
+                Rotate(_swingPoints[0].Position - point.Position);
 
-                //My rotation code here
-
-                //var f = Vector3.ProjectOnPlane(_transform.forward, upVector);
-                //Quaternion lookQuaternion = Quaternion.LookRotation(f, -upVector);
-                //_transform.rotation = Quaternion.Slerp(_transform.rotation, lookQuaternion, Time.deltaTime * _rotationSpeed);
-
-                var angle = upVector.AngleTo(Vector3.Down);
+                var angle = upVector.Angle(Vector3.Down);
                 angle = Mathf.Rad2Deg(angle);
                 GD.Print(angle);
                 var moveDirection = _movementDirection;
@@ -86,8 +82,8 @@ public class PlayerSwingState : StateAction
 
                 var gravity = Vector3.Down * (gravityControl * _gravity * (deltaTime * _deltaTime));
 
-                point.Position += moveDirection; //add our input to velocity
-                point.Position += gravity; //add gravity to our velocity
+                point.Position += moveDirection;
+                point.Position += gravity;
 
                 point.PrevPosition = preSimPos;
             }
@@ -133,8 +129,10 @@ public class PlayerSwingState : StateAction
     public override void OnStateEnter()
     {
         CalculatePerfectPoint(_transform.Translation);
+        _playerBody.UseGravity = false;
         _swingPoints[0] = FindSwingPoint();
         _swingPoints[1] = CreatePlayerPoint();
+        EmitSignal(nameof(Attached), _swingPoints[0].Position);
         _webRopes[0] = new Rope
         {
             PointA = _swingPoints[0],
@@ -145,6 +143,8 @@ public class PlayerSwingState : StateAction
 
     public override void Act(float delta)
     {
+        if (delta == -1)
+            return;
         Simulate(delta);
         _deltaTime = delta;
         _movementDirection = _input.RelativeMovementInput;
@@ -152,24 +152,21 @@ public class PlayerSwingState : StateAction
         _playerBody.Velocity = force;
     }
 
-    //private void Rotate()
-    //{
-    //    var parent = StateMachine.NecessaryObject;
-    //    var translation = parent.Translation;
+    private void Rotate(Vector3 direction)
+    {
+        var parent = _playerBody;
+        var transform = parent.Transform;
 
-    //    var transform = parent.Transform;
+        transform.basis.y = direction.Normalized();
+        transform.basis.z = _input.RelativeMovementInput.Normalized();
+        if (_input.RelativeMovementInput == Vector3.Zero)
+        {
+            transform.basis.z = parent.Transform.basis.x.Cross(parent.Transform.basis.y).Normalized();
+        }
+        transform.basis.x = transform.basis.y.Cross(transform.basis.z).Normalized();
+        transform.basis = transform.basis.Orthonormalized();
 
-    //    _direction = translation.DirectionTo(_swingPoint.Position);
-    //    transform.basis.y = _direction.Normalized();
-    //    transform.basis.z = StateMachine.PlayerInput.RelativeMovementInput.Normalized();
-    //    if (StateMachine.PlayerInput.RelativeMovementInput == Vector3.Zero)
-    //    {
-    //        transform.basis.z = parent.Transform.basis.x.Cross(parent.Transform.basis.y).Normalized();
-    //    }
-    //    transform.basis.x = transform.basis.y.Cross(transform.basis.z).Normalized();
-    //    transform.basis = transform.basis.Orthonormalized();
-
-    //    parent.Transform = parent.Transform.InterpolateWith(transform, delta * 5);
-    //}
+        parent.Transform = parent.Transform.InterpolateWith(transform, _deltaTime * _rotationSpeed);
+    }
 
 }

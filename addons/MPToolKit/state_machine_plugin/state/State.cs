@@ -46,15 +46,15 @@ namespace MP.StateMachine
             {
                 _enterActions.Add(action);
             }
-            else if(action.OnExit == true)
+            if(action.OnExit == true)
             {
                 _exitActions.Add(action);
             }
-            else if(action.OnFixedUpdate == true)
+            if(action.OnFixedUpdate == true)
             {
                 _fixedUpdateActions.Add(action);
             }
-            else if(action.OnUpdate == true)
+            if(action.OnUpdate == true)
             {
                 _updateActions.Add(action);
             }
@@ -78,7 +78,7 @@ namespace MP.StateMachine
             EmitSignal(nameof(StateExit));
         }
 
-        private void CallActions(in List<StateAction> actionList, float delta = 1)
+        private void CallActions(in List<StateAction> actionList, float delta = -1)
         {
             for (int i = 0; i < actionList.Count; i++)
             {
