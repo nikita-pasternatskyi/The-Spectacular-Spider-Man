@@ -7,6 +7,8 @@ namespace MP.StateMachine
     public abstract class BaseStateMachine : Node, IStateMachine
     {
         [Export] private NodePath _defaultStatePath;
+        [Signal] private delegate Node StateChanged();
+
         private State _defaultState;
         private State _currentState;
         private Transitions _currentStateTransitions;
@@ -45,12 +47,10 @@ namespace MP.StateMachine
             {
                 List<Transition> stateTransitions = new List<Transition>();
 
-                var children = new List<Transition>();
+                var transitionsNode = child.FindNode("Transitions", false);
+                var target = transitionsNode == null ? child : transitionsNode;
 
-                if (child.FindNode("Transitions") != null)
-                    children = child.GetNode("Transitions").GetChildren<Transition>();
-                else
-                    children = child.GetChildren<Transition>();
+                var children = target.GetChildren<Transition>();
 
                 if(children.IsEmpty())
                 {
@@ -71,10 +71,10 @@ namespace MP.StateMachine
 
         public sealed override void _Process(float delta)
         {
+            _currentState.Process(delta);
             var currentTransitionState = _currentStateTransitions.Check();
             if (currentTransitionState.change == true)
                 ChangeState(currentTransitionState.newState);
-            _currentState.Process(delta);
             OnProcess(delta);
         }
         public sealed override void _PhysicsProcess(float delta)
@@ -97,8 +97,9 @@ namespace MP.StateMachine
 
             _currentState?.Exit();
             _currentState = newState;
-            _currentStateTransitions = _states[newState];
             _currentState.Enter();
+            _currentStateTransitions = _states[newState];
+            EmitSignal(nameof(StateChanged), newState);
         }
 
         protected virtual void OnInit() { }

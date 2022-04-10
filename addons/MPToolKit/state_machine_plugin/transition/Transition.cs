@@ -1,4 +1,5 @@
 ﻿using Godot;
+using MP.Extensions;
 
 namespace MP.StateMachine
 {
@@ -8,13 +9,14 @@ namespace MP.StateMachine
 
         public State ToState { get; private set; }
 
-        public override void _Ready()
+        public sealed override void _Ready()
         {
+            this.Disable();
             ToState = GetNode<State>(_toStatePath);
-            OnReady();
+            Ready();
         }
 
-        protected virtual void OnReady() { }
+        protected virtual void Ready() { }
 
         public abstract bool Check();
     }

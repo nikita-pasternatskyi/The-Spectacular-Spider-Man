@@ -8,7 +8,7 @@ public class ToSwingTransition : Transition
 
     private WebShooter _webShooter;
 
-    protected override void OnReady()
+    protected override void Ready()
     {
         _webShooter = GetNode<WebShooter>(_pathToWebShooter);
     }

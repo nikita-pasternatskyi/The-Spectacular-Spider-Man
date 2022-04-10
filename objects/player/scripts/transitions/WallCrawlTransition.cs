@@ -6,7 +6,7 @@ public class WallCrawlTransition : ButtonTransition
 {
     [Export] private WallCrawlWallDetector _wallCrawlWallDetector;
 
-    protected override void OnReady()
+    protected override void Ready()
     {
         GetParent().GetParent().TryGetNodeInMeAndParent<WallCrawlWallDetector>(out _wallCrawlWallDetector);
     }

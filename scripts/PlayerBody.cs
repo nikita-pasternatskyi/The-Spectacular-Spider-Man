@@ -49,8 +49,7 @@ public class PlayerBody : KinematicBody
         if(_rayCast.IsColliding() == true)
         {
             GroundNormal = _rayCast.GetCollisionNormal();
-            var angle = Mathf.Rad2Deg(GroundNormal.AngleTo(Vector3.Up));
-
+            var angle = Mathf.Rad2Deg(GroundNormal.Angle(Vector3.Up));
             OnSlope = angle != 0;
             return;
         }
@@ -60,7 +59,9 @@ public class PlayerBody : KinematicBody
 
     private bool OnFloor()
     {
-        return TestMove(Transform, Vector3.Down);
+        var v = Vector3.Down;
+        v.y = -.5f;
+        return TestMove(Transform, v, false);
     }
 
     public void AddForce(Vector3 force)

@@ -7,47 +7,9 @@ public enum MoveConstrainType
     Hard, Soft
 }
 
-public enum ActionPlace : byte
-{
-    Enter, Exit, Update, FixedUpdate
-}
-
-public abstract class StateAction : Node
-{
-    public virtual void Init(BaseStateMachine stateMachine)
-    {
-
-    }
-
-    public abstract void Act();
-}
-
-public class PlayerJumpState : StateAction
-{
-    [Signal] private delegate void Jumped();
-    [Export] private float _jumpHeight;
-
-    private PlayerBody _body;
-
-    public override void Init(BaseStateMachine stateMachine)
-    {
-        _body = stateMachine.GetNodeOfType<PlayerBody>();
-    }
-
-    public override void Act()
-    {
-        EmitSignal(nameof(Jumped));
-
-        _body.Velocity.y = Mathf.Sqrt(_jumpHeight * -2 * _body.Gravity);
-    }
-}
-
-public class PlayerMovementState : State
+public class PlayerMovementAction : StateAction
 {
     [Export] private MoveConstrainType _moveConstrainType;
-    [Export] private float _enterDamp;
-    [Export] private float _exitDamp;
-    [Export] private float _smoothRotation = 5;
     [Export] private float _maxSpeed = 2;
     [Export] private float _acceleration;
 
@@ -56,13 +18,13 @@ public class PlayerMovementState : State
     protected PlayerInput PlayerInput { get; private set; }
     protected PlayerBody PlayerBody { get; private set; }
 
-    protected sealed override void OnInit()
+    public override void Init(BaseStateMachine stateMachine)
     {
         PlayerInput = stateMachine.GetNodeOfType<PlayerInput>();
         PlayerBody = stateMachine.GetNodeOfType<PlayerBody>();
     }
 
-    public sealed override void PhysicsProcess(float delta)
+    public sealed override void Act(float delta)
     {
         var onSlope = PlayerBody.OnSlope;
         var grounded = PlayerBody.Grounded;
@@ -75,8 +37,6 @@ public class PlayerMovementState : State
 
         ConstrainSpeed(onSlope, grounded);
 
-        var targetRotation = PlayerBody.Translation - GetInput();
-        PlayerBody.Transform = PlayerBody.Transform.LookAtSmooth(targetRotation, Vector3.Up, delta * _smoothRotation);
     }
 
     protected virtual Vector3 GetInput()
@@ -90,6 +50,7 @@ public class PlayerMovementState : State
         {
             if (PlayerBody.Velocity.LengthSquared() > _maxSpeed * _maxSpeed)
             {
+                GD.Print(PlayerBody.OnSlope);
                 PlayerBody.Velocity = PlayerBody.Velocity.Normalized() * _maxSpeed;
                 return;
             }
@@ -114,19 +75,4 @@ public class PlayerMovementState : State
             }
         }
     }
-
-    protected sealed override void OnEnter()
-    {
-        PlayerBody.Damp = _enterDamp;
-        MoveEnter();
-    }
-
-    protected sealed override void OnExit()
-    {
-        PlayerBody.Damp = _exitDamp;
-        MoveExit();
-    }
-
-    protected virtual void MoveEnter() { }
-    protected virtual void MoveExit() { }
 }

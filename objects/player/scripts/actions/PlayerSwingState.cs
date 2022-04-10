@@ -16,7 +16,7 @@ public class Rope
 }
 
 [System.Serializable]
-public class PlayerSwingState : State
+public class PlayerSwingState : StateAction
 {
     [Export] private float _rotationSpeed;
     [Export] private bool _constrainStickMinLength;
@@ -43,13 +43,13 @@ public class PlayerSwingState : State
         _perfectPointPosition += position;
     }
 
-    protected override void OnInit()
+    public override void Init(BaseStateMachine baseStateMachine)
     {
-        _input = stateMachine.GetNodeOfType<PlayerInput>();
-        _playerBody = stateMachine.GetNodeOfType<PlayerBody>();
+        _input = baseStateMachine.GetNodeOfType<PlayerInput>();
+        _playerBody = baseStateMachine.GetNodeOfType<PlayerBody>();
         _swingPoints = new RopePoint[2];
         _webRopes = new Rope[1];
-        _transform = stateMachine.GetParent() as Spatial;
+        _transform = baseStateMachine.GetParent() as Spatial;
     }
 
     private void Simulate(float deltaTime)
@@ -130,7 +130,7 @@ public class PlayerSwingState : State
         return new RopePoint { Locked = false, Position = curPos, PrevPosition = _transform.Translation };
     }
 
-    protected override void OnEnter()
+    public override void OnStateEnter()
     {
         CalculatePerfectPoint(_transform.Translation);
         _swingPoints[0] = FindSwingPoint();
@@ -143,7 +143,7 @@ public class PlayerSwingState : State
         };
     }
 
-    public override void Process(float delta)
+    public override void Act(float delta)
     {
         Simulate(delta);
         _deltaTime = delta;
@@ -151,5 +151,25 @@ public class PlayerSwingState : State
         var force = (_swingPoints[1].Position - _swingPoints[1].PrevPosition) / _deltaTime;
         _playerBody.Velocity = force;
     }
+
+    //private void Rotate()
+    //{
+    //    var parent = StateMachine.NecessaryObject;
+    //    var translation = parent.Translation;
+
+    //    var transform = parent.Transform;
+
+    //    _direction = translation.DirectionTo(_swingPoint.Position);
+    //    transform.basis.y = _direction.Normalized();
+    //    transform.basis.z = StateMachine.PlayerInput.RelativeMovementInput.Normalized();
+    //    if (StateMachine.PlayerInput.RelativeMovementInput == Vector3.Zero)
+    //    {
+    //        transform.basis.z = parent.Transform.basis.x.Cross(parent.Transform.basis.y).Normalized();
+    //    }
+    //    transform.basis.x = transform.basis.y.Cross(transform.basis.z).Normalized();
+    //    transform.basis = transform.basis.Orthonormalized();
+
+    //    parent.Transform = parent.Transform.InterpolateWith(transform, delta * 5);
+    //}
 
 }

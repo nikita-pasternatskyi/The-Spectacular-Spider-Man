@@ -3,12 +3,12 @@ using MP.StateMachine;
 
 public class MovementTransition : ButtonTransition
 {
-    [Export] private NodePath _pathToKinematicBody;
-    private KinematicBody _kinematicBody;
+    [Export] private NodePath _pathToPlayerBody;
+    private PlayerBody _kinematicBody;
 
-    protected override void OnReady()
+    protected override void Ready()
     {
-        _kinematicBody = GetNode<KinematicBody>(_pathToKinematicBody);
+        _kinematicBody = GetNode<PlayerBody>(_pathToPlayerBody);
     }
 
     protected override bool AdditionalCheck(bool initialResult = true)
@@ -19,5 +19,4 @@ public class MovementTransition : ButtonTransition
         }
         return false;
     }
-
 }
