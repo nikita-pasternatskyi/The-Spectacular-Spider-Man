@@ -3,4 +3,7 @@
     <TargetFramework>net472</TargetFramework>
     <RootNamespace>TheSpectacularSpiderMan</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="objects\player\scripts\input\" />
+  </ItemGroup>
 </Project>

@@ -1,10 +1,9 @@
 using Godot;
 using MP.StateMachine;
 
-public class ToSwingTransition : Transition
+public class ToSwingTransition : ButtonTransition
 {
     [Export] private NodePath _pathToWebShooter;
-    [Export] private string _buttonName = "throwWeb";
 
     private WebShooter _webShooter;
 
@@ -13,12 +12,11 @@ public class ToSwingTransition : Transition
         _webShooter = GetNode<WebShooter>(_pathToWebShooter);
     }
 
-    public override bool Check()
+    protected override bool AdditionalCheck(bool initialResult = true)
     {
-        if(Input.IsActionJustPressed(_buttonName) == true)
+        if(initialResult == true)
         {
-            if (_webShooter.CanSwing() == true)
-                return true;
+             return _webShooter.CanSwing();
         }
         return false;
     }

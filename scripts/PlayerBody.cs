@@ -4,7 +4,6 @@ using MP.Extensions;
 public class PlayerBody : KinematicBody
 {
     [Export] private NodePath _pathToGroundCheckRay;
-
     [Export] public bool UseGravity;
     [Export] public float Gravity;
     [Export] public float Damp;

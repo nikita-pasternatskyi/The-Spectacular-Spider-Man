@@ -50,7 +50,6 @@ public class PlayerMovementAction : StateAction
         {
             if (PlayerBody.Velocity.LengthSquared() > _maxSpeed * _maxSpeed)
             {
-                GD.Print(PlayerBody.OnSlope);
                 PlayerBody.Velocity = PlayerBody.Velocity.Normalized() * _maxSpeed;
                 return;
             }
@@ -68,7 +67,7 @@ public class PlayerMovementAction : StateAction
                     PlayerBody.Velocity = limitedVelocity;
                     break;
                 case MoveConstrainType.Soft:
-                    Vector3 forceToApply = flatVelocity.Normalized() * _maxSpeed - PlayerBody.Velocity;
+                    Vector3 forceToApply = (flatVelocity.Normalized() * _maxSpeed - PlayerBody.Velocity) * GetPhysicsProcessDeltaTime();
                     forceToApply.y = 0;
                     PlayerBody.AddForce(forceToApply);
                     break;

@@ -8,6 +8,14 @@ namespace MP.Extensions
         {
             return new Plane(planeNormal, 0).Project(me);
         }
+        
+        public static Vector3 NormalizedClamp(this Vector3 me, float length)
+        {
+            var lengthSquared = me.LengthSquared();
+            if (lengthSquared < length * length)
+                return me;
+            return me.Normalized() * length;
+        }
 
         public static Vector3 Clamp(this Vector3 me, float maxLength, float minLength)
         {

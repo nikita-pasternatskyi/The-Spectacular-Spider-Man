@@ -1,0 +1,269 @@
+[gd_scene load_steps=26 format=2]
+
+[ext_resource path="res://objects/player/models/Model.tscn" type="PackedScene" id=1]
+[ext_resource path="res://objects/player/scripts/player_camera.gd" type="Script" id=2]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/standard_transitions/ButtonTransition.cs" type="Script" id=3]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/state_machine/BaseStateMachine.cs" type="Script" id=4]
+[ext_resource path="res://objects/player/scripts/input/PlayerInput.cs" type="Script" id=5]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/state/State.cs" type="Script" id=6]
+[ext_resource path="res://objects/player/scripts/actions/PlayerSwingState.cs" type="Script" id=7]
+[ext_resource path="res://scripts/PlayerBody.cs" type="Script" id=8]
+[ext_resource path="res://objects/player/scripts/actions/PlayerMovementAction.cs" type="Script" id=9]
+[ext_resource path="res://objects/player/scripts/actions/RotatePlayerToInput.cs" type="Script" id=10]
+[ext_resource path="res://objects/player/scripts/transitions/GroundedTransition.cs" type="Script" id=11]
+[ext_resource path="res://objects/player/scripts/actions/PlayerJumpAction.cs" type="Script" id=12]
+[ext_resource path="res://objects/player/scripts/transitions/SetDampAction.cs" type="Script" id=13]
+[ext_resource path="res://objects/player/scripts/transitions/AirToGroundTransition.cs" type="Script" id=14]
+[ext_resource path="res://objects/player/scripts/debugger.gd" type="Script" id=15]
+[ext_resource path="res://fonts/AnonymousPro-Regular.ttf" type="DynamicFontData" id=16]
+[ext_resource path="res://addons/LineRenderer/LineRenderer.gd" type="Script" id=17]
+[ext_resource path="res://objects/player/scripts/set_toplevel.gd" type="Script" id=18]
+[ext_resource path="res://objects/player/scripts/swinging/WebShooter.cs" type="Script" id=19]
+[ext_resource path="res://objects/player/scripts/transitions/ToSwingTransition.cs" type="Script" id=20]
+[ext_resource path="res://objects/player/fx/web.material" type="Material" id=21]
+
+[sub_resource type="DynamicFont" id=6]
+size = 48
+use_filter = true
+font_data = ExtResource( 16 )
+
+[sub_resource type="Curve" id=7]
+bake_resolution = 125
+_data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 0.747312, 1 ), 0.0, 0.0, 0, 0 ]
+
+[sub_resource type="Curve" id=8]
+_data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 0.989247, 1 ), -0.0536798, 0.0, 0, 0 ]
+
+[sub_resource type="CapsuleShape" id=5]
+radius = 0.608259
+height = 1.25
+
+[node name="SpiderMan" type="KinematicBody"]
+collision_layer = 3
+script = ExtResource( 8 )
+_pathToGroundCheckRay = NodePath("GroundCheck")
+UseGravity = true
+Gravity = -75.0
+
+[node name="Model" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.20466, 0 )
+
+[node name="GroundCheck" type="RayCast" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14128 )
+enabled = true
+cast_to = Vector3( 0, -2, 0 )
+collide_with_areas = true
+debug_shape_custom_color = Color( 1, 0, 0, 1 )
+debug_shape_thickness = 4.0
+
+[node name="WebShooter" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.643816, 0.76518, 0, -0.76518, 0.643816, 0, 0.934666, 0 )
+script = ExtResource( 19 )
+_anglesToRotateDown = 40
+_angleRadius = 45
+_angleBetweenRays = 5
+_perfectDistance = 25.0
+_perfectStartAngle = 45.0
+_maxDistance = 50.0
+_minDistance = 20.0
+
+[node name="RayCast" type="RayCast" parent="WebShooter"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
+cast_to = Vector3( 0, 15, 9 )
+
+[node name="PlayerInput" type="Node" parent="."]
+script = ExtResource( 5 )
+_pathToSpringArm = NodePath("../SpringArm")
+
+[node name="WebRenderer" type="ImmediateGeometry" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.71786, 0 )
+material_override = ExtResource( 21 )
+script = ExtResource( 17 )
+endThickness = 0.5
+drawCaps = false
+drawCorners = false
+
+[node name="WebPivot" type="Position3D" parent="WebRenderer"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.145292, 0 )
+
+[node name="StateMachineDebugger" type="Node" parent="."]
+script = ExtResource( 15 )
+
+[node name="RichTextLabel2" type="RichTextLabel" parent="StateMachineDebugger"]
+margin_left = 18.0
+margin_right = 397.0
+margin_bottom = 167.0
+custom_colors/default_color = Color( 0, 0.729412, 0.741176, 1 )
+custom_fonts/normal_font = SubResource( 6 )
+text = "Text"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource( 4 )
+_defaultStatePath = NodePath("IdleState")
+
+[node name="SwingState" type="Node" parent="StateMachine"]
+script = ExtResource( 6 )
+
+[node name="Transitions" type="Node" parent="StateMachine/SwingState"]
+
+[node name="ToAir" type="Node" parent="StateMachine/SwingState/Transitions"]
+script = ExtResource( 3 )
+_toStatePath = NodePath("../../../InAirState")
+_buttonConditions = [ 4 ]
+_allTriggered = true
+
+[node name="Actions" type="Node" parent="StateMachine/SwingState"]
+
+[node name="SwingAction" type="Node" parent="StateMachine/SwingState/Actions"]
+script = ExtResource( 7 )
+OnEnter = true
+OnExit = true
+OnFixedUpdate = true
+_swingSpeed = Vector2( 0.75, 1 )
+_rotationSpeed = 15.0
+_damp = 0.6
+_spring = 0.1
+_gravity = 150.0
+_antiBuildingForce = 0.5
+_crispTurn = 5.0
+_enterVelocityClamp = 1.0
+_boostPower = 15.0
+_jumpCurve = SubResource( 7 )
+_controlCurve = SubResource( 8 )
+_jumpHeight = 25.0
+
+[node name="BoostCooldown" type="Timer" parent="StateMachine/SwingState/Actions/SwingAction"]
+wait_time = 0.25
+
+[node name="IdleState" type="Node" parent="StateMachine"]
+script = ExtResource( 6 )
+
+[node name="Transitions" type="Node" parent="StateMachine/IdleState"]
+
+[node name="ToAir" type="Node" parent="StateMachine/IdleState/Transitions"]
+script = ExtResource( 11 )
+_toStatePath = NodePath("../../../InAirState")
+_pathToPlayerBody = NodePath("../../../..")
+
+[node name="ToJump" type="Node" parent="StateMachine/IdleState/Transitions"]
+script = ExtResource( 3 )
+_toStatePath = NodePath("../../../JumpState")
+_buttonConditions = [ 4 ]
+
+[node name="Actions" type="Node" parent="StateMachine/IdleState"]
+
+[node name="SetDampTo4" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 13 )
+OnEnter = true
+_damp = 4.0
+
+[node name="MoveAction" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 9 )
+OnFixedUpdate = true
+_maxSpeed = 15.0
+_acceleration = 30.0
+
+[node name="RotateToInput" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 10 )
+OnUpdate = true
+
+[node name="SetDampTo0" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 13 )
+OnExit = true
+
+[node name="InAirState" type="Node" parent="StateMachine"]
+script = ExtResource( 6 )
+
+[node name="Transitions" type="Node" parent="StateMachine/InAirState"]
+
+[node name="ToSwing" type="Node" parent="StateMachine/InAirState/Transitions"]
+script = ExtResource( 20 )
+_toStatePath = NodePath("../../../SwingState")
+_buttonConditions = [ 5 ]
+_allTriggered = true
+_pathToWebShooter = NodePath("../../../../WebShooter")
+
+[node name="ToGround" type="Node" parent="StateMachine/InAirState/Transitions"]
+script = ExtResource( 11 )
+_toStatePath = NodePath("../../../IdleState")
+_pathToPlayerBody = NodePath("../../../..")
+_awaitedResult = true
+
+[node name="Actions" type="Node" parent="StateMachine/InAirState"]
+
+[node name="RotateToInput3" type="Node" parent="StateMachine/InAirState/Actions"]
+script = ExtResource( 10 )
+OnUpdate = true
+
+[node name="Move" type="Node" parent="StateMachine/InAirState/Actions"]
+script = ExtResource( 9 )
+OnFixedUpdate = true
+_moveConstrainType = 1
+_maxSpeed = 4.0
+_acceleration = 8.0
+
+[node name="JumpState" type="Node" parent="StateMachine"]
+script = ExtResource( 6 )
+
+[node name="Transitions" type="Node" parent="StateMachine/JumpState"]
+
+[node name="ToSwing2" type="Node" parent="StateMachine/JumpState/Transitions"]
+script = ExtResource( 20 )
+_toStatePath = NodePath("../../../SwingState")
+_buttonConditions = [ 5 ]
+_allTriggered = true
+_pathToWebShooter = NodePath("../../../../WebShooter")
+
+[node name="ToGround" type="Node" parent="StateMachine/JumpState/Transitions"]
+script = ExtResource( 14 )
+_toStatePath = NodePath("../../../IdleState")
+_pathToPlayerBody = NodePath("../../../..")
+_awaitedResult = true
+
+[node name="Actions" type="Node" parent="StateMachine/JumpState"]
+
+[node name="RotateToInput2" type="Node" parent="StateMachine/JumpState/Actions"]
+script = ExtResource( 10 )
+OnUpdate = true
+
+[node name="Jump" type="Node" parent="StateMachine/JumpState/Actions"]
+script = ExtResource( 12 )
+OnEnter = true
+_jumpHeight = 4.0
+
+[node name="Move" type="Node" parent="StateMachine/JumpState/Actions"]
+script = ExtResource( 9 )
+OnFixedUpdate = true
+_moveConstrainType = 1
+_maxSpeed = 4.0
+_acceleration = 8.0
+
+[node name="SpringArm" type="SpringArm" parent="."]
+transform = Transform( -1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0, 0 )
+spring_length = 6.0
+script = ExtResource( 2 )
+
+[node name="Camera" type="Camera" parent="SpringArm"]
+far = 1000.0
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.0385308, 0 )
+shape = SubResource( 5 )
+
+[node name="Swingpoint" type="Spatial" parent="."]
+script = ExtResource( 18 )
+
+[node name="CSGSphere" type="CSGSphere" parent="Swingpoint"]
+radius = 0.2356
+
+[node name="SwingCast" type="RayCast" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.612213 )
+enabled = true
+cast_to = Vector3( 0, 0, 1 )
+debug_shape_custom_color = Color( 1, 0.937255, 0, 1 )
+
+[connection signal="StateChanged" from="StateMachine" to="StateMachineDebugger" method="_on_StateMachine_StateChanged"]
+[connection signal="Attached" from="StateMachine/SwingState/Actions/SwingAction" to="WebRenderer" method="_on_SwingAction_Attached"]

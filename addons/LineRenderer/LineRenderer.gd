@@ -10,6 +10,8 @@ export var drawCorners = true
 export var globalCoords = true
 export var scaleTexture = true
 
+onready var pivot = $WebPivot
+
 var camera
 var cameraOrigin
 var updatePosition : bool = false
@@ -27,7 +29,7 @@ func _process(delta):
 	cameraOrigin = to_local(camera.get_global_transform().origin)
 	
 	if(updatePosition):
-		points[0] = get_parent_spatial().translation
+		points[0] = (pivot as Position3D).global_transform.origin
 	
 	var progressStep = 1.0 / points.size();
 	var progress = 0;

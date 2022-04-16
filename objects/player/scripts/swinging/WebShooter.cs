@@ -1,23 +1,23 @@
 using Godot;
 using System.Collections.Generic;
 using MP.Extensions;
-using MP.StateMachine;
 
 public class WebShooter : Spatial
 {
-    [Export] private NodePath _pathToStateMachine;
     [Export] private int _anglesToRotateDown;
     [Export] private int _angleRadius;
     [Export] private int _angleBetweenRays;
+    [Export] private float _perfectDistance;
+    [Export] private float _perfectStartAngle;
     [Export] private float _maxDistance;
-    [Export] private Vector3 _perfectPointD;
+    [Export] private float _minDistance = 0.1f;
 
     private RayCast _rayCast;
     private List<SwingPoint> _swingPoints;
     private Vector3 _initialRotation;
     private Vector3[] _rayCastPath;
 
-    private Vector3 _perfectPoint;
+    private Spatial _parent;
 
     public SwingPoint CurrentSwingPoint { get; private set; }
 
@@ -25,10 +25,11 @@ public class WebShooter : Spatial
     {
         _rayCast = new RayCast();
 
-        _swingPoints = new List<SwingPoint>();
-
         var rayCount = _angleRadius / _angleBetweenRays + 1;
+        _swingPoints = new List<SwingPoint>(rayCount);
         _rayCastPath = new Vector3[rayCount];
+
+        _parent = GetParentSpatial();
 
         _initialRotation = Rotation;
 
@@ -39,15 +40,12 @@ public class WebShooter : Spatial
 
     private void CreateRayPath(int rayCount)
     {
-        var parent = GetParent<KinematicBody>();
         for (int i = 0; i < rayCount; i++)
         {
             var angle = _angleBetweenRays * (i - rayCount / 2.0f);
-            _rayCastPath[i] = parent.Transform.basis.z.Rotated(Vector3.Up, Mathf.Deg2Rad(angle)) * _maxDistance;
+            _rayCastPath[i] = _parent.Transform.basis.z.Rotated(Vector3.Up, Mathf.Deg2Rad(angle)) * _maxDistance;
         }
     }
-
-    public override void _PhysicsProcess(float delta) => _swingPoints.Clear();
 
     private void ScanWorld()
     {
@@ -61,6 +59,7 @@ public class WebShooter : Spatial
         {
             for (int i = 0; i < _anglesToRotateDown; i++)
             {
+                GD.Print($"Rotating {RotationDegrees}");
                 RotateX(Mathf.Deg2Rad(1));
                 CheckFOV();
                 if (listToCheck.IsEmpty() == true)
@@ -76,46 +75,51 @@ public class WebShooter : Spatial
     {
         for (int i = 0; i < _rayCastPath.Length; i++)
         {
-            CheckRay(_rayCastPath[i], _swingPoints);
+            _rayCast.CastTo = _rayCastPath[i];
+            _rayCast.ForceRaycastUpdate();
+            if (_rayCast.IsColliding() == true)
+            {
+                var point = _rayCast.GetCollisionPoint();
+                if (GetParentSpatial().Translation.DistanceSquaredTo(point) < _minDistance * _minDistance)
+                {
+                    return;
+                }
+                _swingPoints.Add(new SwingPoint { Position = point, Normal = _rayCast.GetCollisionNormal()});
+                continue;
+            }
         }
     }
 
-    private bool CheckRay(Vector3 path, List<SwingPoint> list)
+    private void ScorePoints()
     {
-        _rayCast.CastTo = path;
-        _rayCast.ForceRaycastUpdate();
-        if (_rayCast.IsColliding() == true)
+        for (int i = 0; i < _swingPoints.Count; i++)
         {
-            var point = _rayCast.GetCollisionPoint();
-            var distance = ToGlobal(Translation).DistanceTo(point);
-            list.Add(new SwingPoint(point, ToGlobal(Translation).DistanceTo(point), Mathf.Abs((_perfectPoint - point).Length())));
-            return true;
+            SwingPoint point = _swingPoints[i];
+            var angle = point.Position.Normalized().Angle(_parent.Translation.Normalized());
+            angle = Mathf.Deg2Rad(angle);
+            var distance = _parent.Translation.DistanceSquaredTo(point.Position);
+            var distanceScore = Mathf.Abs(distance - _perfectDistance * _perfectDistance);
+            var angleScore = Mathf.Abs(_perfectStartAngle - angle);
+            point.Score = angleScore + distanceScore;
         }
-        return false;
     }
 
     public bool CanSwing()
     {
-        var position = GetParent<KinematicBody>().Translation;
-        var forward = GetParent<KinematicBody>().Transform.basis.z.Normalized();
-        var res = _perfectPointD.z * forward;
-        res.y = _perfectPointD.y;
-        var yVelocity = GetNode<BaseStateMachine>(_pathToStateMachine).GetNodeOfType<PlayerBody>().Velocity.y;
-        _perfectPoint = forward * yVelocity + position + new Vector3(0, res.y, 0);
-        //CurrentSwingPoint = new SwingPoint(_perfectPoint, position.DistanceTo(_perfectPoint));
         ScanWorld();
-        var previous = new SwingPoint(Vector3.Zero, 0, float.MaxValue);
-
         if (_swingPoints.IsEmpty())
             return false;
+        ScorePoints();
+        var winner = new SwingPoint(Vector3.Zero, 0, float.MaxValue);
 
         foreach (var item in _swingPoints)
         {
-            if (item.Score < previous.Score)
-                previous = item;
+            if (item.Score < winner.Score)
+                winner = item;
         }
-        CurrentSwingPoint = previous;
 
+        CurrentSwingPoint = winner;
+        _swingPoints.Clear();
         return true;
     }
 }
