@@ -21,7 +21,7 @@ GameState="*res://scripts/GameState.cs"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/MPToolKit/plugin.cfg" )
+enabled=PoolStringArray( "res://addons/CityGenerator/plugin.cfg", "res://addons/MPToolKit/plugin.cfg" )
 
 [input]
 

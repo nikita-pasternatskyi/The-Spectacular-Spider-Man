@@ -22,7 +22,8 @@ public class PlayerSwingState : StateAction
     [Export] private Curve _jumpCurve;
     [Export] private Curve _controlCurve;
     [Export] private float _jumpHeight;
-    public float ArcAngle { get; private set; }
+    public float Angle { get; private set; }
+    public float PercentageAngle { get; private set; }
 
     private float _deltaTime;
     private WebShooter _webShooter;
@@ -59,7 +60,7 @@ public class PlayerSwingState : StateAction
     public override void OnStateExit()
     {
         var jumpForce = Mathf.Sqrt(_jumpHeight * -2 * _playerBody.Gravity);
-        _playerBody.Velocity.y = _jumpCurve.Interpolate(ArcAngle / 90) * jumpForce;
+        _playerBody.Velocity.y = _jumpCurve.Interpolate(Angle / 90) * jumpForce;
         _playerBody.UseGravity = true;
     }
 
@@ -99,7 +100,8 @@ public class PlayerSwingState : StateAction
 
         var control = _controlCurve.Interpolate(Mathf.Lerp(1, 0, angle / 90));
         var gravityControl = Mathf.Lerp(0, 1, angle / 90);
-        ArcAngle = angle;
+        PercentageAngle = angle/90;
+        Angle = angle;
 
         moveDirection.z *= control;
         moveDirection.z *= _swingSpeed.y * _deltaTime;
@@ -138,7 +140,6 @@ public class PlayerSwingState : StateAction
         var inputRatio = vec2.Dot(_input.RelativeMovementInputVec2) * -1;
         inputRatio = Mathf.Round(inputRatio);
         inputRatio = inputRatio == -1 ? 0 : 1;
-        GD.Print(inputRatio);
         if (input == Vector3.Zero)
             inputRatio = 0;
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=2]
+[gd_scene load_steps=29 format=2]
 
 [ext_resource path="res://objects/player/models/Model.tscn" type="PackedScene" id=1]
 [ext_resource path="res://objects/player/scripts/player_camera.gd" type="Script" id=2]
@@ -21,11 +21,18 @@
 [ext_resource path="res://objects/player/scripts/swinging/WebShooter.cs" type="Script" id=19]
 [ext_resource path="res://objects/player/scripts/transitions/ToSwingTransition.cs" type="Script" id=20]
 [ext_resource path="res://objects/player/fx/web.material" type="Material" id=21]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/standard_actions/ReplicateFieldToAnimatedModel.cs" type="Script" id=22]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/standard_actions/SetAnimationEnumValue.cs" type="Script" id=23]
+[ext_resource path="res://addons/MPToolKit/state_machine_plugin/standard_actions/SetOneShotBoolean.cs" type="Script" id=24]
 
 [sub_resource type="DynamicFont" id=6]
 size = 48
 use_filter = true
 font_data = ExtResource( 16 )
+
+[sub_resource type="CapsuleShape" id=5]
+radius = 0.608259
+height = 1.25
 
 [sub_resource type="Curve" id=7]
 bake_resolution = 125
@@ -33,10 +40,6 @@ _data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 0.747312, 1 ), 0.0, 0.0, 0, 
 
 [sub_resource type="Curve" id=8]
 _data = [ Vector2( 0, 0 ), 0.0, 0.0, 0, 0, Vector2( 0.989247, 1 ), -0.0536798, 0.0, 0, 0 ]
-
-[sub_resource type="CapsuleShape" id=5]
-radius = 0.608259
-height = 1.25
 
 [node name="SpiderMan" type="KinematicBody"]
 collision_layer = 3
@@ -46,7 +49,7 @@ UseGravity = true
 Gravity = -75.0
 
 [node name="Model" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.20466, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.22474, 0 )
 
 [node name="GroundCheck" type="RayCast" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.14128 )
@@ -60,7 +63,7 @@ debug_shape_thickness = 4.0
 transform = Transform( 1, 0, 0, 0, 0.643816, 0.76518, 0, -0.76518, 0.643816, 0, 0.934666, 0 )
 script = ExtResource( 19 )
 _anglesToRotateDown = 40
-_angleRadius = 45
+_angleRadius = 55
 _angleBetweenRays = 5
 _perfectDistance = 25.0
 _perfectStartAngle = 45.0
@@ -68,7 +71,6 @@ _maxDistance = 50.0
 _minDistance = 20.0
 
 [node name="RayCast" type="RayCast" parent="WebShooter"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 cast_to = Vector3( 0, 15, 9 )
 
 [node name="PlayerInput" type="Node" parent="."]
@@ -99,6 +101,30 @@ text = "Text"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="SpringArm" type="SpringArm" parent="."]
+transform = Transform( -1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0, 0 )
+spring_length = 6.0
+script = ExtResource( 2 )
+
+[node name="Camera" type="Camera" parent="SpringArm"]
+far = 1000.0
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.0385308, 0 )
+shape = SubResource( 5 )
+
+[node name="Swingpoint" type="Spatial" parent="."]
+script = ExtResource( 18 )
+
+[node name="CSGSphere" type="CSGSphere" parent="Swingpoint"]
+radius = 0.2356
+
+[node name="SwingCast" type="RayCast" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.612213 )
+enabled = true
+cast_to = Vector3( 0, 0, 1 )
+debug_shape_custom_color = Color( 1, 0.937255, 0, 1 )
 
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource( 4 )
@@ -138,6 +164,20 @@ _jumpHeight = 25.0
 [node name="BoostCooldown" type="Timer" parent="StateMachine/SwingState/Actions/SwingAction"]
 wait_time = 0.25
 
+[node name="SetSwingEnum" type="Node" parent="StateMachine/SwingState/Actions"]
+script = ExtResource( 23 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "IsSwinging"
+
+[node name="SetSwingArc" type="Node" parent="StateMachine/SwingState/Actions"]
+script = ExtResource( 22 )
+OnUpdate = true
+_importNodePath = NodePath("../SwingAction")
+_importField = "PercentageAngle"
+_animatedModelPath = NodePath("../../../../Model")
+_propertyName = "Swinging"
+
 [node name="IdleState" type="Node" parent="StateMachine"]
 script = ExtResource( 6 )
 
@@ -155,6 +195,12 @@ _buttonConditions = [ 4 ]
 
 [node name="Actions" type="Node" parent="StateMachine/IdleState"]
 
+[node name="SetAirEnum2" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 23 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "GroundState"
+
 [node name="SetDampTo4" type="Node" parent="StateMachine/IdleState/Actions"]
 script = ExtResource( 13 )
 OnEnter = true
@@ -169,6 +215,14 @@ _acceleration = 30.0
 [node name="RotateToInput" type="Node" parent="StateMachine/IdleState/Actions"]
 script = ExtResource( 10 )
 OnUpdate = true
+
+[node name="SetRunBlendSpace" type="Node" parent="StateMachine/IdleState/Actions"]
+script = ExtResource( 22 )
+OnUpdate = true
+_importNodePath = NodePath("../MoveAction")
+_importField = "CurrentSpeed"
+_animatedModelPath = NodePath("../../../../Model")
+_propertyName = "Speed"
 
 [node name="SetDampTo0" type="Node" parent="StateMachine/IdleState/Actions"]
 script = ExtResource( 13 )
@@ -193,6 +247,20 @@ _pathToPlayerBody = NodePath("../../../..")
 _awaitedResult = true
 
 [node name="Actions" type="Node" parent="StateMachine/InAirState"]
+
+[node name="SetToAirEnum" type="Node" parent="StateMachine/InAirState/Actions"]
+script = ExtResource( 23 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "IsSwinging"
+Value = 1
+
+[node name="SetAirEnum" type="Node" parent="StateMachine/InAirState/Actions"]
+script = ExtResource( 23 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "GroundState"
+Value = 1
 
 [node name="RotateToInput3" type="Node" parent="StateMachine/InAirState/Actions"]
 script = ExtResource( 10 )
@@ -225,7 +293,21 @@ _awaitedResult = true
 
 [node name="Actions" type="Node" parent="StateMachine/JumpState"]
 
-[node name="RotateToInput2" type="Node" parent="StateMachine/JumpState/Actions"]
+[node name="PlayOneShot" type="Node" parent="StateMachine/JumpState/Actions"]
+script = ExtResource( 24 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "Jumped"
+Value = true
+
+[node name="SetAirEnum" type="Node" parent="StateMachine/JumpState/Actions"]
+script = ExtResource( 23 )
+OnEnter = true
+_animatedModelPath = NodePath("../../../../Model")
+PropertyName = "GroundState"
+Value = 1
+
+[node name="RotateToInput" type="Node" parent="StateMachine/JumpState/Actions"]
 script = ExtResource( 10 )
 OnUpdate = true
 
@@ -240,30 +322,6 @@ OnFixedUpdate = true
 _moveConstrainType = 1
 _maxSpeed = 4.0
 _acceleration = 8.0
-
-[node name="SpringArm" type="SpringArm" parent="."]
-transform = Transform( -1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0, 0 )
-spring_length = 6.0
-script = ExtResource( 2 )
-
-[node name="Camera" type="Camera" parent="SpringArm"]
-far = 1000.0
-
-[node name="CollisionShape" type="CollisionShape" parent="."]
-transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, -0.0385308, 0 )
-shape = SubResource( 5 )
-
-[node name="Swingpoint" type="Spatial" parent="."]
-script = ExtResource( 18 )
-
-[node name="CSGSphere" type="CSGSphere" parent="Swingpoint"]
-radius = 0.2356
-
-[node name="SwingCast" type="RayCast" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.612213 )
-enabled = true
-cast_to = Vector3( 0, 0, 1 )
-debug_shape_custom_color = Color( 1, 0.937255, 0, 1 )
 
 [connection signal="StateChanged" from="StateMachine" to="StateMachineDebugger" method="_on_StateMachine_StateChanged"]
 [connection signal="Attached" from="StateMachine/SwingState/Actions/SwingAction" to="WebRenderer" method="_on_SwingAction_Attached"]

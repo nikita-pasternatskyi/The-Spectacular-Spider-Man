@@ -35,6 +35,8 @@ public class PlayerMovementAction : StateAction
         var curSpeed = GetInput().ProjectOnPlane(groundNormal) * _acceleration;
         PlayerBody.AddForce(curSpeed * delta);
 
+        CurrentSpeed = GetInput().Length();
+
         ConstrainSpeed(onSlope, grounded);
 
     }
@@ -56,7 +58,6 @@ public class PlayerMovementAction : StateAction
         }
 
         Vector3 flatVelocity = new Vector3(PlayerBody.Velocity.x, 0, PlayerBody.Velocity.z);
-        CurrentSpeed = flatVelocity.Length() / _maxSpeed;
         if (flatVelocity.LengthSquared() > _maxSpeed * _maxSpeed)
         {
             switch (_moveConstrainType)
